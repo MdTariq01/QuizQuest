@@ -85,4 +85,4 @@ src/main/java/com/quizrpg/
 ## 🤝 Contributing
 Feel free to fork this project and add more questions or features!
 
-**Created by Md Tariq01**
+Happy Coding 🚀
