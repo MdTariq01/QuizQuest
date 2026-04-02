@@ -1,0 +1,6 @@
+out/
+*.class
+filelist.txt
+.DS_Store
+.idea/
+*.log
