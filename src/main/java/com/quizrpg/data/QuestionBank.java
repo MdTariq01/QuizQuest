@@ -1,7 +1,6 @@
 package com.quizrpg.data;
 
 import com.quizrpg.model.Question;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -12,10 +11,12 @@ import java.util.stream.Collectors;
  */
 public class QuestionBank {
     private List<Question> allQuestions;
+    private java.util.Set<Question> usedQuestions;
     private static final Random random = new Random();
 
     public QuestionBank() {
-        allQuestions = new ArrayList<>();
+        allQuestions = new java.util.ArrayList<>();
+        usedQuestions = new java.util.HashSet<>();
         loadQuestions();
     }
 
@@ -78,11 +79,31 @@ public class QuestionBank {
     }
 
     public Question getRandomQuestionByDifficulty(String difficulty) {
+        // Filter by difficulty AND not used
         List<Question> filtered = allQuestions.stream()
                 .filter(q -> q.getDifficulty().equalsIgnoreCase(difficulty))
+                .filter(q -> !usedQuestions.contains(q))
                 .collect(Collectors.toList());
-        if (filtered.isEmpty()) return null;
-        return filtered.get(random.nextInt(filtered.size()));
+
+        // Fallback: If no UNUSED questions for this difficulty, pick any UNUSED question
+        if (filtered.isEmpty()) {
+            filtered = allQuestions.stream()
+                    .filter(q -> !usedQuestions.contains(q))
+                    .collect(Collectors.toList());
+        }
+
+        // Entire pool is exhausted
+        if (filtered.isEmpty()) {
+            return null;
+        }
+
+        Question selected = filtered.get(random.nextInt(filtered.size()));
+        usedQuestions.add(selected); // Mark as used
+        return selected;
+    }
+
+    public void resetQuestions() {
+        usedQuestions.clear();
     }
 
     public void shuffleQuestions() {

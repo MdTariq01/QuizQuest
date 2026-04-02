@@ -7,11 +7,11 @@ if (!(Test-Path -Path "out")) {
 
 Write-Host "Compiling project files..." -ForegroundColor Cyan
 $javaFiles = Get-ChildItem -Path src\main\java -Recurse -Filter *.java | Select-Object -ExpandProperty FullName
-javac -d out $javaFiles
+javac -encoding UTF-8 -d out $javaFiles
 
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "Compilation successful! Launching Quiz RPG..." -ForegroundColor Green
-    java -cp out com.quizrpg.Main
+    Write-Host "Compilation successful! Launching QuizQuest..." -ForegroundColor Green
+    java -cp out com.quizrpg.QuizQuest
 } else {
     Write-Host "Compilation failed. Please check the error messages above." -ForegroundColor Red
 }

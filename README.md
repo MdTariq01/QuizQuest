@@ -1,39 +1,43 @@
-# 🛡️ Quiz RPG: Java Master
+# 🛡️ QuizQuest: Java Master
 
-A complete, OOP-driven desktop RPG game built in **Java using Swing**. Battle enemies, answer Java OOP-themed questions, level up, and defeat the ultimate Boss! 
+**QuizQuest: Java Master** is a complete, OOP-driven desktop RPG game built in **Java using Swing**. Battle enemies, answer Java OOP-themed questions, level up, and defeat the ultimate Boss! 
 
-✨ **Featured in college projects for demonstrating strong OOP principles.**
+✨ **Featured in college projects for demonstrating strong OOP principles and clean architecture.**
 
 ---
 
 ## 🎮 Game Features
 
-- **Strategic Quiz Battles**: Answer Java OOP questions to attack enemies.
-- **Dynamic Progression**: Enemies scale in difficulty as you win.
-- **Special Boss Battles**: Encounter unique Boss mechanics every 5 levels.
-- **Power-Up System**: Use points for **Healing (+40 HP)** or **Double Damage (x2)** on your next attack.
-- **Real-Time Pressure**: 15-second timer for every question.
-- **Critical Hits**: 15% chance to deal double damage on any attack!
-
-## 🧠 Topics Covered
-
-The game features 50+ hand-crafted questions on:
-- **Inheritance & Polymorphism**
-- **Abstraction & Encapsulation**
-- **Interfaces & Abstract Classes**
-- **Access Modifiers (Public, Private, etc.)**
-- **Collections (ArrayList, HashMap)**
-- **Constructors & Method Overloading/Overriding**
+- **⚔️ Strategic Quiz Battles**: Answer Java OOP questions to attack enemies.
+- **📈 Adaptive Difficulty**: Enemies scale in difficulty based on your **Accuracy**.
+- **👹 Special Boss Battles**: Encounter unique Boss mechanics at the end of each level.
+- **⚡ Power-Up System**: Use points for **Healing (+40 HP)** or **Double Damage (x2)**.
+- **🧠 Non-Repeating Questions**: Questions will not repeat within a single game session.
+- **🕒 Real-Time Pressure**: 15-second timer for every question.
+- **💥 Critical Hits**: 15% chance to deal double damage on any attack!
 
 ---
 
-## 🛠️ Architecture (OOP Principles)
+## 🧠 Core OOP Concepts Used
 
-This project is built using **Clean Architecture (MVC-like)**:
-- **Model**: `Character`, `Hero`, `Enemy`, `Boss`, `Question` (Abstraction, Inheritance).
-- **Data**: `QuestionBank` (Data Persistence logic).
-- **Engine**: `BattleEngine` (Game state & combat logic).
-- **UI**: `GameUI` (Java Swing components & event handling).
+This project is a masterclass in **Object-Oriented Programming (OOP)**:
+
+- **🔹 Abstraction**: Uses an `abstract class Character` to define the blueprint for all living entities.
+- **🔹 Inheritance**: `Hero`, `Enemy`, and `Boss` extend `Character`, reusing base logic while adding unique traits.
+- **🔹 Polymorphism**: The Engine treats all opponents as a generic `Enemy` reference, but they behave differently at runtime (Method Overriding).
+- **🔹 Encapsulation**: Strictly uses `private` fields with `public` getters/setters to ensure valid game states.
+
+---
+
+## 🏛️ Architecture (MVC)
+
+The project follows a **Modified MVC (Model-View-Controller)** pattern:
+- **Model**: `Hero`, `Enemy`, `Boss`, `Question` (Entities).
+- **Logic Engine**: `BattleEngine` (Controller).
+- **Data Layer**: `QuestionBank` (Data management).
+- **UI**: `GameUI` (Swing View).
+
+---
 
 ## 🚀 How to Run
 
@@ -52,11 +56,11 @@ Alternatively, you can compile and run manually:
 # 1. Create out directory
 mkdir out
 
-# 2. Compile all files
-javac -d out src/main/java/com/quizrpg/**/*.java
+# 2. Compile all files (UTF-8)
+javac -encoding UTF-8 -d out (Get-ChildItem -Path src/main/java -Recurse -Filter *.java | Select-Object -ExpandProperty FullName)
 
 # 3. Launch
-java -cp out com.quizrpg.Main
+java -cp out com.quizrpg.QuizQuest
 ```
 
 ---
@@ -65,7 +69,7 @@ java -cp out com.quizrpg.Main
 
 ```text
 src/main/java/com/quizrpg/
-├── Main.java             # Entry point
+├── QuizQuest.java        # Entry point
 ├── data/
 │   └── QuestionBank.java # Quiz storage/logic
 ├── engine/

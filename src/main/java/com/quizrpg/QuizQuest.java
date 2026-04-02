@@ -4,9 +4,9 @@ import com.quizrpg.ui.GameUI;
 import javax.swing.SwingUtilities;
 
 /**
- * Entry point for the Quiz RPG Battle Game.
+ * Entry point for the QuizQuest Battle Game.
  */
-public class Main {
+public class QuizQuest {
     public static void main(String[] args) {
         // Run the GUI creation on the Event Dispatch Thread (Best Practice)
         SwingUtilities.invokeLater(() -> {

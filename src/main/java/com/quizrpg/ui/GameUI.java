@@ -16,7 +16,6 @@ import java.awt.event.ActionListener;
  */
 public class GameUI extends JFrame {
     private BattleEngine engine;
-    private JPanel mainPanel;
     private JLabel questionLabel;
     private JButton[] optionButtons;
     private JProgressBar heroHealthBar;
@@ -34,7 +33,7 @@ public class GameUI extends JFrame {
     private int timeLeft;
 
     public GameUI() {
-        setTitle("Quiz RPG: Java Master");
+        setTitle("🛡️ QuizQuest: Java Master");
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -43,24 +42,72 @@ public class GameUI extends JFrame {
     }
 
     private void initStartScreen() {
-        startPanel = new JPanel(new GridLayout(3, 1, 10, 10));
-        startPanel.setBorder(BorderFactory.createEmptyBorder(100, 200, 100, 200));
+        startPanel = new JPanel(new BorderLayout(20, 20));
+        startPanel.setBackground(new Color(25, 25, 35));
+        startPanel.setBorder(BorderFactory.createEmptyBorder(50, 100, 50, 100));
         
-        JLabel title = new JLabel("QUIZ RPG BATTLE", SwingConstants.CENTER);
-        title.setFont(new Font("Serif", Font.BOLD, 36));
+        // Title
+        JLabel title = new JLabel("🛡️ QuizQuest: Java Master", SwingConstants.CENTER);
+        title.setFont(new Font("Serif", Font.BOLD, 42));
+        title.setForeground(new Color(255, 215, 0)); // Gold title
+        startPanel.add(title, BorderLayout.NORTH);
+
+        // Rules Section
+        StringBuilder rules = new StringBuilder();
+        rules.append("--- GAME RULES ---\n\n");
+        rules.append("⚔️ CORE COMBAT: Correct = Attack! Wrong/Timeout = Take Damage.\n");
+        rules.append("📈 PROGRESSION: Defeat 3 Enemies to face the Level Boss.\n");
+        rules.append("🎓 SYSTEM ADAPTATION: >80% accuracy? Difficulty UP!\n");
+        rules.append("⚡ POWERUPS: Use HEAL (+40 HP) or x2 DAMAGE strategically.\n");
+        rules.append("🧠 NO LOOPING: Questions will never repeat in a session.\n\n");
+        rules.append("Do you have what it takes to defeat the Java Overlords?");
+
+        JTextArea rulesArea = new JTextArea(rules.toString());
+        rulesArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        rulesArea.setEditable(false);
+        rulesArea.setLineWrap(true);
+        rulesArea.setWrapStyleWord(true);
+        rulesArea.setBackground(new Color(40, 40, 55));
+        rulesArea.setForeground(Color.WHITE);
+        rulesArea.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(70, 70, 90)),
+            BorderFactory.createEmptyBorder(20, 20, 20, 20)
+        ));
         
-        JTextField nameField = new JTextField("Hero");
+        startPanel.add(rulesArea, BorderLayout.CENTER);
+
+        // Input and Buttons
+        JPanel bottomPanel = new JPanel(new GridLayout(2, 1, 10, 10));
+        bottomPanel.setOpaque(false);
+
+        JPanel inputPanel = new JPanel(new FlowLayout());
+        inputPanel.setOpaque(false);
+        JLabel nameLabel = new JLabel("Enter Hero Name: ");
+        nameLabel.setForeground(Color.WHITE);
+        JTextField nameField = new JTextField("Hero", 15);
+        inputPanel.add(nameLabel);
+        inputPanel.add(nameField);
+
+        JPanel btnPanel = new JPanel(new GridLayout(1, 2, 10, 10));
+        btnPanel.setOpaque(false);
         JButton startBtn = new JButton("START GAME");
-        
+        JButton exitBtn = new JButton("EXIT");
+
         startBtn.addActionListener(e -> {
             engine = new BattleEngine(nameField.getText());
             initBattleScreen();
             updateUI();
         });
 
-        startPanel.add(title);
-        startPanel.add(nameField);
-        startPanel.add(startBtn);
+        exitBtn.addActionListener(e -> System.exit(0));
+
+        btnPanel.add(startBtn);
+        btnPanel.add(exitBtn);
+
+        bottomPanel.add(inputPanel);
+        bottomPanel.add(btnPanel);
+        
+        startPanel.add(bottomPanel, BorderLayout.SOUTH);
 
         setContentPane(startPanel);
         revalidate();
@@ -68,18 +115,24 @@ public class GameUI extends JFrame {
 
     private void initBattleScreen() {
         battlePanel = new JPanel(new BorderLayout(10, 10));
+        battlePanel.setBackground(new Color(25, 25, 35));
         battlePanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Top: stats
         JPanel statsPanel = new JPanel(new GridLayout(2, 2, 10, 5));
+        statsPanel.setOpaque(false);
         heroInfoLabel = new JLabel("Hero: Level 1");
+        heroInfoLabel.setForeground(Color.WHITE);
         heroHealthBar = new JProgressBar(0, 100);
-        heroHealthBar.setForeground(Color.GREEN);
+        heroHealthBar.setBackground(new Color(50, 50, 65));
+        heroHealthBar.setForeground(new Color(46, 204, 113));
         heroHealthBar.setStringPainted(true);
 
         enemyInfoLabel = new JLabel("Enemy: Java Shadow");
+        enemyInfoLabel.setForeground(Color.WHITE);
         enemyHealthBar = new JProgressBar(0, 100);
-        enemyHealthBar.setForeground(Color.RED);
+        enemyHealthBar.setBackground(new Color(50, 50, 65));
+        enemyHealthBar.setForeground(new Color(231, 76, 60));
         enemyHealthBar.setStringPainted(true);
 
         statsPanel.add(heroInfoLabel);
@@ -87,16 +140,42 @@ public class GameUI extends JFrame {
         statsPanel.add(heroHealthBar);
         statsPanel.add(enemyHealthBar);
 
+        // Control Buttons
+        JButton restartBtn = new JButton("RESTART");
+        JButton exitBtn = new JButton("EXIT");
+        restartBtn.setFont(new Font("SansSerif", Font.BOLD, 12));
+        exitBtn.setFont(new Font("SansSerif", Font.BOLD, 12));
+        restartBtn.setBackground(new Color(60, 60, 80));
+        restartBtn.setForeground(Color.WHITE);
+        exitBtn.setBackground(new Color(80, 40, 40));
+        exitBtn.setForeground(Color.WHITE);
+
+        restartBtn.addActionListener(e -> {
+            int choice = JOptionPane.showConfirmDialog(this, "Restart Game?", "Confirm", JOptionPane.YES_NO_OPTION);
+            if (choice == JOptionPane.YES_OPTION) initStartScreen();
+        });
+        exitBtn.addActionListener(e -> System.exit(0));
+
+        JPanel topControlPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        topControlPanel.setOpaque(false);
+        topControlPanel.add(restartBtn);
+        topControlPanel.add(exitBtn);
+
         // Center: Question and Options
         JPanel centerPanel = new JPanel(new BorderLayout(10, 10));
+        centerPanel.setOpaque(false);
         questionLabel = new JLabel("Question text here...", SwingConstants.CENTER);
         questionLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
+        questionLabel.setForeground(Color.WHITE);
         questionLabel.setPreferredSize(new Dimension(800, 100));
 
         JPanel optionsPanel = new JPanel(new GridLayout(2, 2, 10, 10));
+        optionsPanel.setOpaque(false);
         optionButtons = new JButton[4];
         for (int i = 0; i < 4; i++) {
             optionButtons[i] = new JButton("Option " + (i + 1));
+            optionButtons[i].setBackground(new Color(60, 60, 80));
+            optionButtons[i].setForeground(Color.WHITE);
             int index = i;
             optionButtons[i].addActionListener(e -> handleAnswer(index));
             optionsPanel.add(optionButtons[i]);
@@ -104,10 +183,16 @@ public class GameUI extends JFrame {
         
         // Power-ups and Timer
         JPanel actionsPanel = new JPanel(new GridLayout(1, 3, 10, 10));
+        actionsPanel.setOpaque(false);
         healBtn = new JButton("HEAL (+HP)");
+        healBtn.setBackground(new Color(40, 70, 40));
+        healBtn.setForeground(Color.WHITE);
         doubleDamageBtn = new JButton("x2 DAMAGE");
+        doubleDamageBtn.setBackground(new Color(70, 70, 40));
+        doubleDamageBtn.setForeground(Color.WHITE);
         timerLabel = new JLabel("Time: 15s", SwingConstants.CENTER);
-        timerLabel.setFont(new Font("Monospaced", Font.BOLD, 20));
+        timerLabel.setFont(new Font("Monospaced", Font.BOLD, 22));
+        timerLabel.setForeground(new Color(255, 215, 0));
 
         healBtn.addActionListener(e -> useHealPowerUp());
         doubleDamageBtn.addActionListener(e -> useDoubleDamagePowerUp());
@@ -124,16 +209,22 @@ public class GameUI extends JFrame {
         battleLog = new JTextArea(8, 50);
         battleLog.setEditable(false);
         battleLog.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        battleLog.setBackground(new Color(30, 30, 40));
+        battleLog.setForeground(new Color(200, 200, 220));
         JScrollPane scroll = new JScrollPane(battleLog);
+        scroll.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 90)));
         
         feedbackLabel = new JLabel("Ready?", SwingConstants.CENTER);
-        feedbackLabel.setForeground(Color.BLUE);
+        feedbackLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
+        feedbackLabel.setForeground(new Color(255, 215, 0));
 
         JPanel bottomPanel = new JPanel(new BorderLayout());
+        bottomPanel.setOpaque(false);
         bottomPanel.add(feedbackLabel, BorderLayout.NORTH);
         bottomPanel.add(scroll, BorderLayout.CENTER);
 
         battlePanel.add(statsPanel, BorderLayout.NORTH);
+        battlePanel.add(topControlPanel, BorderLayout.WEST);
         battlePanel.add(centerPanel, BorderLayout.CENTER);
         battlePanel.add(bottomPanel, BorderLayout.SOUTH);
 
@@ -145,12 +236,13 @@ public class GameUI extends JFrame {
         Hero hero = engine.getHero();
         Enemy enemy = engine.getCurrentEnemy();
         
-        heroInfoLabel.setText(hero.getName() + " (Lvl " + hero.getLevel() + ") - Powers: " + hero.getPowerUps());
+        heroInfoLabel.setText(hero.getName() + " (HP) - Level " + engine.getCurrentLevel());
         heroHealthBar.setMaximum(hero.getMaxHealth());
         heroHealthBar.setValue(hero.getHealth());
-        heroHealthBar.setString("HP: " + hero.getHealth() + " / " + hero.getMaxHealth());
+        heroHealthBar.setString(hero.getHealth() + " / " + hero.getMaxHealth());
 
-        enemyInfoLabel.setText(enemy.getName() + " [" + enemy.getDifficulty() + "]");
+        String enemySuffix = (enemy instanceof com.quizrpg.model.Boss) ? " [BOSS]" : " [" + (engine.getEnemiesDefeatedInLevel() + 1) + "/3]";
+        enemyInfoLabel.setText(enemy.getName() + enemySuffix);
         enemyHealthBar.setMaximum(enemy.getMaxHealth());
         enemyHealthBar.setValue(enemy.getHealth());
         enemyHealthBar.setString(enemy.getHealth() + " / " + enemy.getMaxHealth());
@@ -176,7 +268,7 @@ public class GameUI extends JFrame {
         if (gameTimer != null) gameTimer.stop();
         timeLeft = 15;
         timerLabel.setText("Time: " + timeLeft + "s");
-        timerLabel.setForeground(Color.BLACK);
+        timerLabel.setForeground(new Color(255, 215, 0));
         gameTimer = new Timer(1000, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -201,18 +293,29 @@ public class GameUI extends JFrame {
         battleLog.setCaretPosition(battleLog.getDocument().getLength());
 
         if (index == -1) {
-            feedbackLabel.setText("Timeout! You took damage.");
-        } else if (result.startsWith("Correct")) {
-            feedbackLabel.setText("CORRECT!");
+            feedbackLabel.setText("TIMEOUT! You took damage.");
+            feedbackLabel.setForeground(Color.RED);
+        } else if (result.contains("CORRECT")) {
+            feedbackLabel.setText("CORRECT! Proceeding...");
+            feedbackLabel.setForeground(new Color(0, 150, 0));
         } else {
-            feedbackLabel.setText("WRONG ANSWER!");
+            feedbackLabel.setText("WRONG! Enemy counter-attacks.");
+            feedbackLabel.setForeground(Color.RED);
+        }
+
+        // Check for special events in logs
+        if (result.contains("LEVEL CLEARED")) {
+            JOptionPane.showMessageDialog(this, "CONGRATULATIONS!\nLevel Cleared! Heading to next level.", "Level Up", JOptionPane.INFORMATION_MESSAGE);
+        } else if (result.contains("Level") && result.contains("Overlord")) {
+             feedbackLabel.setText("BOSS ALERT! BE CAREFUL!");
+             feedbackLabel.setForeground(Color.ORANGE);
         }
 
         if (engine.isGameOver()) {
             gameOver();
         } else {
-            // Wait 1.5 seconds before next question
-            Timer nextTimer = new Timer(1500, e -> updateUI());
+            // Wait 2 seconds before next question to let user read feedback
+            Timer nextTimer = new Timer(2000, e -> updateUI());
             nextTimer.setRepeats(false);
             nextTimer.start();
         }
@@ -233,8 +336,8 @@ public class GameUI extends JFrame {
     private void updateUIWithoutLoading() {
         Hero hero = engine.getHero();
         heroHealthBar.setValue(hero.getHealth());
-        heroHealthBar.setString("HP: " + hero.getHealth() + " / " + hero.getMaxHealth());
-        heroInfoLabel.setText(hero.getName() + " (Lvl " + hero.getLevel() + ") - Powers: " + hero.getPowerUps());
+        heroHealthBar.setString(hero.getHealth() + " / " + hero.getMaxHealth());
+        heroInfoLabel.setText(hero.getName() + " (HP) - Level " + engine.getCurrentLevel());
         healBtn.setEnabled(hero.getPowerUps() > 0);
     }
 
