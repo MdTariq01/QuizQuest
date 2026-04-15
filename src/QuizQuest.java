@@ -1,6 +1,5 @@
-package com.quizrpg;
 
-import com.quizrpg.ui.GameUI;
+import ui.GameUI;
 import javax.swing.SwingUtilities;
 
 /**

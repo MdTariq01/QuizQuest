@@ -1,9 +1,9 @@
-package com.quizrpg.ui;
+package ui;
 
-import com.quizrpg.engine.BattleEngine;
-import com.quizrpg.model.Hero;
-import com.quizrpg.model.Enemy;
-import com.quizrpg.model.Question;
+import engine.BattleEngine;
+import model.Hero;
+import model.Enemy;
+import model.Question;
 
 import javax.swing.*;
 import java.awt.*;
@@ -241,7 +241,7 @@ public class GameUI extends JFrame {
         heroHealthBar.setValue(hero.getHealth());
         heroHealthBar.setString(hero.getHealth() + " / " + hero.getMaxHealth());
 
-        String enemySuffix = (enemy instanceof com.quizrpg.model.Boss) ? " [BOSS]" : " [" + (engine.getEnemiesDefeatedInLevel() + 1) + "/3]";
+        String enemySuffix = (enemy instanceof model.Boss) ? " [BOSS]" : " [" + (engine.getEnemiesDefeatedInLevel() + 1) + "/3]";
         enemyInfoLabel.setText(enemy.getName() + enemySuffix);
         enemyHealthBar.setMaximum(enemy.getMaxHealth());
         enemyHealthBar.setValue(enemy.getHealth());

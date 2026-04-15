@@ -1,4 +1,4 @@
-package com.quizrpg.model;
+package model;
 
 /**
  * Question class represents a quiz question with options and answers.

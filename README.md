@@ -57,10 +57,10 @@ Alternatively, you can compile and run manually:
 mkdir out
 
 # 2. Compile all files (UTF-8)
-javac -encoding UTF-8 -d out (Get-ChildItem -Path src/main/java -Recurse -Filter *.java | Select-Object -ExpandProperty FullName)
+javac -encoding UTF-8 -d out (Get-ChildItem -Path src -Recurse -Filter *.java | Select-Object -ExpandProperty FullName)
 
 # 3. Launch
-java -cp out com.quizrpg.QuizQuest
+java -cp out QuizQuest
 ```
 
 ---
@@ -68,7 +68,7 @@ java -cp out com.quizrpg.QuizQuest
 ## 📁 Project Structure
 
 ```text
-src/main/java/com/quizrpg/
+src/
 ├── QuizQuest.java        # Entry point
 ├── data/
 │   └── QuestionBank.java # Quiz storage/logic

@@ -1,6 +1,6 @@
-package com.quizrpg.data;
+package data;
 
-import com.quizrpg.model.Question;
+import model.Question;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;

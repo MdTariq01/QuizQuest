@@ -1,4 +1,4 @@
-package com.quizrpg.model;
+package model;
 
 /**
  * Abstract class representing a Character in the Quiz RPG game.

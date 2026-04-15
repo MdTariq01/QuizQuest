@@ -1,10 +1,10 @@
-package com.quizrpg.engine;
+package engine;
 
-import com.quizrpg.data.QuestionBank;
-import com.quizrpg.model.Boss;
-import com.quizrpg.model.Enemy;
-import com.quizrpg.model.Hero;
-import com.quizrpg.model.Question;
+import data.QuestionBank;
+import model.Boss;
+import model.Enemy;
+import model.Hero;
+import model.Question;
 
 /**
  * BattleEngine manages the state and logic of the game battle.
