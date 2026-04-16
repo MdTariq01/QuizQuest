@@ -53,7 +53,7 @@ public class BattleEngine {
     public void spawnNextEnemy() {
         // If we defeated level enemies, it's Boss time
         if (enemiesDefeatedInLevel >= ENEMIES_PER_LEVEL) {
-            String bossName = "Level " + currentLevel + " Overlord";
+            String bossName = "Goblin Boss";
             int baseHealth = 150 + (currentLevel * 100);
             currentEnemy = new Boss(bossName, baseHealth);
         } else {
@@ -61,7 +61,17 @@ public class BattleEngine {
             String diff = getEnemyDifficulty();
             int health = 40 + (currentLevel * 20) + (enemiesDefeatedInLevel * 10);
             int expReward = 50 + (currentLevel * 30);
-            currentEnemy = new Enemy("Java Shadow " + (enemiesDefeatedInLevel + 1), health, diff, expReward);
+            
+            String enemyName;
+            if (enemiesDefeatedInLevel == 0) {
+                enemyName = "Goblin Warrior";
+            } else if (enemiesDefeatedInLevel == 1) {
+                enemyName = "Goblin Blade";
+            } else {
+                enemyName = "Goblin Giant";
+            }
+            
+            currentEnemy = new Enemy(enemyName, health, diff, expReward);
         }
     }
 
@@ -91,25 +101,33 @@ public class BattleEngine {
         if (choiceIndex != -1 && currentQuestion.checkAnswer(choiceIndex)) {
             correctAnswersCount++;
             int damage = hero.attack();
+            
+            if (hero.isLastAttackDouble()) {
+                log.append("⚔️ POWER-UP: Double Damage activated!\n");
+            }
+            if (hero.isLastAttackCritical()) {
+                log.append("💥 CRITICAL HIT!\n");
+            }
+            
             currentEnemy.takeDamage(damage);
-            log.append("CORRECT! ").append(hero.getName()).append(" deals ").append(damage).append(" damage.\n");
+            log.append("CORRECT! ").append(currentEnemy.getName()).append(" takes ").append(damage).append(" damage.\n");
             
             if (!currentEnemy.isAlive()) {
                 battlesWon++;
-                log.append(currentEnemy.getName()).append(" defeated! Gained ").append(currentEnemy.getRewardExp()).append(" EXP.\n");
+                log.append("ENEMY DEFEATED!\n");
+                log.append(currentEnemy.getName()).append(" dropped ").append(currentEnemy.getRewardExp()).append(" XP.\n");
                 hero.addExp(currentEnemy.getRewardExp());
                 
                 // Check if it was a boss
                 if (currentEnemy instanceof Boss) {
                     currentLevel++;
                     enemiesDefeatedInLevel = 0;
-                    log.append("--- LEVEL CLEARED! Moving to Level ").append(currentLevel).append(" ---\n");
+                    log.append("--- 🏆 LEVEL CLEARED! Moving to Level ").append(currentLevel).append(" ---\n");
                 } else {
                     enemiesDefeatedInLevel++;
                 }
                 
-                spawnNextEnemy();
-                log.append("Up Next: ").append(currentEnemy.getName()).append("!\n");
+                // Excluded spawnNextEnemy to allow UI animation flow sequencing
             }
         } 
         // Wrong answer or Timeout (Enemy's Turn)
@@ -118,7 +136,7 @@ public class BattleEngine {
             // Scaling damage based on accuracy? Maybe just flat scale
             hero.takeDamage(damage);
             String reason = (choiceIndex == -1) ? "TIMEOUT!" : "WRONG!";
-            log.append(reason).append(" ").append(currentEnemy.getName()).append(" deals ").append(damage).append(" damage.\n");
+            log.append(reason).append(" ").append(currentEnemy.getName()).append(" deals ").append(damage).append(" damage to you.\n");
         }
         
         return log.toString();

@@ -3,6 +3,7 @@ package ui;
 import engine.BattleEngine;
 import model.Hero;
 import model.Enemy;
+import model.Boss;
 import model.Question;
 
 import javax.swing.*;
@@ -22,8 +23,7 @@ public class GameUI extends JFrame {
     private JProgressBar enemyHealthBar;
     private JLabel heroInfoLabel;
     private JLabel enemyInfoLabel;
-    private JTextArea battleLog;
-    private JLabel feedbackLabel;
+    private JTextArea terminalLog;
     private JPanel battlePanel;
     private JPanel startPanel;
     private JButton healBtn;
@@ -31,13 +31,18 @@ public class GameUI extends JFrame {
     private Timer gameTimer;
     private JLabel timerLabel;
     private int timeLeft;
+    
+    // New Animation Integration fields
+    private SpritePanel spritePanel;
+    private AnimationManager animationManager;
+    private JPanel bottomActionPanel;
+    private CardLayout bottomCardLayout;
 
     public GameUI() {
-        setTitle("🛡️ QuizQuest: Java Master");
+        setTitle("QuizQuest: Java Master");
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-
         initStartScreen();
     }
 
@@ -46,13 +51,11 @@ public class GameUI extends JFrame {
         startPanel.setBackground(new Color(25, 25, 35));
         startPanel.setBorder(BorderFactory.createEmptyBorder(50, 100, 50, 100));
         
-        // Title
-        JLabel title = new JLabel("🛡️ QuizQuest: Java Master", SwingConstants.CENTER);
+        JLabel title = new JLabel("QuizQuest", SwingConstants.CENTER);
         title.setFont(new Font("Serif", Font.BOLD, 42));
-        title.setForeground(new Color(255, 215, 0)); // Gold title
+        title.setForeground(new Color(255, 215, 0));
         startPanel.add(title, BorderLayout.NORTH);
 
-        // Rules Section
         StringBuilder rules = new StringBuilder();
         rules.append("--- GAME RULES ---\n\n");
         rules.append("⚔️ CORE COMBAT: Correct = Attack! Wrong/Timeout = Take Damage.\n");
@@ -76,7 +79,6 @@ public class GameUI extends JFrame {
         
         startPanel.add(rulesArea, BorderLayout.CENTER);
 
-        // Input and Buttons
         JPanel bottomPanel = new JPanel(new GridLayout(2, 1, 10, 10));
         bottomPanel.setOpaque(false);
 
@@ -106,7 +108,6 @@ public class GameUI extends JFrame {
 
         bottomPanel.add(inputPanel);
         bottomPanel.add(btnPanel);
-        
         startPanel.add(bottomPanel, BorderLayout.SOUTH);
 
         setContentPane(startPanel);
@@ -114,154 +115,173 @@ public class GameUI extends JFrame {
     }
 
     private void initBattleScreen() {
-        battlePanel = new JPanel(new BorderLayout(10, 10));
-        battlePanel.setBackground(new Color(25, 25, 35));
-        battlePanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        battlePanel = new JPanel(new BorderLayout(0, 0));
+        battlePanel.setBackground(new Color(35, 45, 55)); 
 
-        // Top: stats
-        JPanel statsPanel = new JPanel(new GridLayout(2, 2, 10, 5));
-        statsPanel.setOpaque(false);
-        heroInfoLabel = new JLabel("Hero: Level 1");
-        heroInfoLabel.setForeground(Color.WHITE);
-        heroHealthBar = new JProgressBar(0, 100);
-        heroHealthBar.setBackground(new Color(50, 50, 65));
-        heroHealthBar.setForeground(new Color(46, 204, 113));
-        heroHealthBar.setStringPainted(true);
+        spritePanel = new SpritePanel();
+        spritePanel.setLayout(null);
+        animationManager = new AnimationManager(spritePanel);
 
-        enemyInfoLabel = new JLabel("Enemy: Java Shadow");
-        enemyInfoLabel.setForeground(Color.WHITE);
-        enemyHealthBar = new JProgressBar(0, 100);
-        enemyHealthBar.setBackground(new Color(50, 50, 65));
-        enemyHealthBar.setForeground(new Color(231, 76, 60));
-        enemyHealthBar.setStringPainted(true);
-
-        statsPanel.add(heroInfoLabel);
-        statsPanel.add(enemyInfoLabel);
-        statsPanel.add(heroHealthBar);
-        statsPanel.add(enemyHealthBar);
-
-        // Control Buttons
         JButton restartBtn = new JButton("RESTART");
         JButton exitBtn = new JButton("EXIT");
-        restartBtn.setFont(new Font("SansSerif", Font.BOLD, 12));
-        exitBtn.setFont(new Font("SansSerif", Font.BOLD, 12));
-        restartBtn.setBackground(new Color(60, 60, 80));
-        restartBtn.setForeground(Color.WHITE);
-        exitBtn.setBackground(new Color(80, 40, 40));
-        exitBtn.setForeground(Color.WHITE);
+        restartBtn.setBounds(10, 10, 100, 30);
+        exitBtn.setBounds(120, 10, 80, 30);
+        
+        JPanel enemyCard = createEntityCard(true);
+        enemyCard.setBounds(500, 20, 250, 60);
 
+        JPanel playerCard = createEntityCard(false);
+        playerCard.setBounds(20, 150, 250, 60);
+        
+        spritePanel.add(restartBtn);
+        spritePanel.add(exitBtn);
+        spritePanel.add(enemyCard);
+        spritePanel.add(playerCard);
+        
         restartBtn.addActionListener(e -> {
             int choice = JOptionPane.showConfirmDialog(this, "Restart Game?", "Confirm", JOptionPane.YES_NO_OPTION);
-            if (choice == JOptionPane.YES_OPTION) initStartScreen();
+            if (choice == JOptionPane.YES_OPTION) {
+                engine = new BattleEngine(engine.getHero().getName());
+                updateUI();
+            }
         });
         exitBtn.addActionListener(e -> System.exit(0));
 
-        JPanel topControlPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        topControlPanel.setOpaque(false);
-        topControlPanel.add(restartBtn);
-        topControlPanel.add(exitBtn);
+        battlePanel.add(spritePanel, BorderLayout.CENTER);
 
-        // Center: Question and Options
-        JPanel centerPanel = new JPanel(new BorderLayout(10, 10));
-        centerPanel.setOpaque(false);
+        bottomCardLayout = new CardLayout();
+        bottomActionPanel = new JPanel(bottomCardLayout);
+        bottomActionPanel.setPreferredSize(new Dimension(800, 220));
+        bottomActionPanel.setBackground(new Color(20, 20, 30));
+        bottomActionPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(70, 70, 90), 3, true),
+            BorderFactory.createEmptyBorder(10, 15, 10, 15)
+        ));
+
+        JPanel optionsStatePanel = new JPanel(new BorderLayout(10, 10));
+        optionsStatePanel.setOpaque(false);
+        
         questionLabel = new JLabel("Question text here...", SwingConstants.CENTER);
         questionLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
         questionLabel.setForeground(Color.WHITE);
-        questionLabel.setPreferredSize(new Dimension(800, 100));
-
-        JPanel optionsPanel = new JPanel(new GridLayout(2, 2, 10, 10));
-        optionsPanel.setOpaque(false);
+        
+        JPanel optionsGrid = new JPanel(new GridLayout(2, 2, 10, 10));
+        optionsGrid.setOpaque(false);
         optionButtons = new JButton[4];
         for (int i = 0; i < 4; i++) {
             optionButtons[i] = new JButton("Option " + (i + 1));
             optionButtons[i].setBackground(new Color(60, 60, 80));
             optionButtons[i].setForeground(Color.WHITE);
+            optionButtons[i].setFont(new Font("SansSerif", Font.BOLD, 14));
+            optionButtons[i].setFocusPainted(false);
             int index = i;
             optionButtons[i].addActionListener(e -> handleAnswer(index));
-            optionsPanel.add(optionButtons[i]);
+            optionsGrid.add(optionButtons[i]);
         }
         
-        // Power-ups and Timer
-        JPanel actionsPanel = new JPanel(new GridLayout(1, 3, 10, 10));
+        JPanel actionsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
         actionsPanel.setOpaque(false);
         healBtn = new JButton("HEAL (+HP)");
-        healBtn.setBackground(new Color(40, 70, 40));
-        healBtn.setForeground(Color.WHITE);
         doubleDamageBtn = new JButton("x2 DAMAGE");
-        doubleDamageBtn.setBackground(new Color(70, 70, 40));
-        doubleDamageBtn.setForeground(Color.WHITE);
         timerLabel = new JLabel("Time: 15s", SwingConstants.CENTER);
-        timerLabel.setFont(new Font("Monospaced", Font.BOLD, 22));
+        timerLabel.setFont(new Font("Monospaced", Font.BOLD, 18));
         timerLabel.setForeground(new Color(255, 215, 0));
-
-        healBtn.addActionListener(e -> useHealPowerUp());
-        doubleDamageBtn.addActionListener(e -> useDoubleDamagePowerUp());
-
         actionsPanel.add(healBtn);
         actionsPanel.add(doubleDamageBtn);
         actionsPanel.add(timerLabel);
         
-        centerPanel.add(questionLabel, BorderLayout.NORTH);
-        centerPanel.add(optionsPanel, BorderLayout.CENTER);
-        centerPanel.add(actionsPanel, BorderLayout.SOUTH);
+        healBtn.addActionListener(e -> useHealPowerUp());
+        doubleDamageBtn.addActionListener(e -> useDoubleDamagePowerUp());
 
-        // Bottom: Log
-        battleLog = new JTextArea(8, 50);
-        battleLog.setEditable(false);
-        battleLog.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        battleLog.setBackground(new Color(30, 30, 40));
-        battleLog.setForeground(new Color(200, 200, 220));
-        JScrollPane scroll = new JScrollPane(battleLog);
-        scroll.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 90)));
+        optionsStatePanel.add(questionLabel, BorderLayout.NORTH);
+        optionsStatePanel.add(optionsGrid, BorderLayout.CENTER);
+        optionsStatePanel.add(actionsPanel, BorderLayout.SOUTH);
+
+        JPanel terminalStatePanel = new JPanel(new BorderLayout());
+        terminalStatePanel.setOpaque(false);
         
-        feedbackLabel = new JLabel("Ready?", SwingConstants.CENTER);
-        feedbackLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
-        feedbackLabel.setForeground(new Color(255, 215, 0));
+        terminalLog = new JTextArea();
+        terminalLog.setEditable(false);
+        terminalLog.setFont(new Font("Monospaced", Font.BOLD, 16));
+        terminalLog.setBackground(new Color(20, 20, 30));
+        terminalLog.setForeground(new Color(0, 255, 0));
+        terminalStatePanel.add(new JScrollPane(terminalLog), BorderLayout.CENTER);
 
-        JPanel bottomPanel = new JPanel(new BorderLayout());
-        bottomPanel.setOpaque(false);
-        bottomPanel.add(feedbackLabel, BorderLayout.NORTH);
-        bottomPanel.add(scroll, BorderLayout.CENTER);
+        bottomActionPanel.add(optionsStatePanel, "OPTIONS");
+        bottomActionPanel.add(terminalStatePanel, "TERMINAL");
 
-        battlePanel.add(statsPanel, BorderLayout.NORTH);
-        battlePanel.add(topControlPanel, BorderLayout.WEST);
-        battlePanel.add(centerPanel, BorderLayout.CENTER);
-        battlePanel.add(bottomPanel, BorderLayout.SOUTH);
+        battlePanel.add(bottomActionPanel, BorderLayout.SOUTH);
+
+        animationManager.setPlayerState("idle", null);
 
         setContentPane(battlePanel);
         revalidate();
+    }
+
+    private JPanel createEntityCard(boolean isEnemy) {
+        JPanel card = new JPanel(new BorderLayout());
+        card.setOpaque(false);
+        
+        JLabel nameLabel = new JLabel(isEnemy ? "Enemy Name" : "Hero Name");
+        nameLabel.setForeground(Color.WHITE);
+        nameLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+        
+        JProgressBar hpBar = new JProgressBar(0, 100);
+        hpBar.setStringPainted(true);
+        if (isEnemy) {
+            enemyInfoLabel = nameLabel;
+            enemyHealthBar = hpBar;
+            hpBar.setForeground(new Color(231, 76, 60));
+        } else {
+            heroInfoLabel = nameLabel;
+            heroHealthBar = hpBar;
+            hpBar.setForeground(new Color(46, 204, 113));
+        }
+        hpBar.setBackground(new Color(50, 50, 65));
+        
+        card.add(nameLabel, BorderLayout.NORTH);
+        card.add(hpBar, BorderLayout.CENTER);
+        return card;
     }
 
     private void updateUI() {
         Hero hero = engine.getHero();
         Enemy enemy = engine.getCurrentEnemy();
         
-        heroInfoLabel.setText(hero.getName() + " (HP) - Level " + engine.getCurrentLevel());
+        heroInfoLabel.setText(hero.getName() + " - Lv " + engine.getCurrentLevel());
         heroHealthBar.setMaximum(hero.getMaxHealth());
         heroHealthBar.setValue(hero.getHealth());
         heroHealthBar.setString(hero.getHealth() + " / " + hero.getMaxHealth());
 
-        String enemySuffix = (enemy instanceof model.Boss) ? " [BOSS]" : " [" + (engine.getEnemiesDefeatedInLevel() + 1) + "/3]";
-        enemyInfoLabel.setText(enemy.getName() + enemySuffix);
+        enemyInfoLabel.setText(enemy.getName());
         enemyHealthBar.setMaximum(enemy.getMaxHealth());
         enemyHealthBar.setValue(enemy.getHealth());
         enemyHealthBar.setString(enemy.getHealth() + " / " + enemy.getMaxHealth());
 
         healBtn.setEnabled(hero.getPowerUps() > 0);
         doubleDamageBtn.setEnabled(hero.getPowerUps() > 0 && !hero.isDoubleDamageActive());
+        
+        animationManager.loadEnemyAnimations(enemy.getName());
 
         loadNextQuestion();
     }
 
     private void loadNextQuestion() {
+        bottomCardLayout.show(bottomActionPanel, "OPTIONS");
+        terminalLog.setText(""); 
+        
         Question q = engine.getNextQuestion();
-        questionLabel.setText("<html><center>" + q.getText() + "</center></html>");
-        String[] opts = q.getOptions();
-        for (int i = 0; i < 4; i++) {
-            optionButtons[i].setText(opts[i]);
-            optionButtons[i].setEnabled(true);
+        if (q != null) {
+            questionLabel.setText("<html><center>" + q.getText() + "</center></html>");
+            String[] opts = q.getOptions();
+            for (int i = 0; i < 4; i++) {
+                optionButtons[i].setText(opts[i]);
+                optionButtons[i].setEnabled(true);
+            }
+            startTimer();
+        } else {
+            terminalLog.setText("No more questions. GAME OVER.");
         }
-        startTimer();
     }
 
     private void startTimer() {
@@ -287,58 +307,129 @@ public class GameUI extends JFrame {
     private void handleAnswer(int index) {
         if (gameTimer != null) gameTimer.stop();
         for (JButton b : optionButtons) b.setEnabled(false);
+        bottomCardLayout.show(bottomActionPanel, "TERMINAL");
         
-        String result = engine.processAnswer(index);
-        battleLog.append(result + "-----------------\n");
-        battleLog.setCaretPosition(battleLog.getDocument().getLength());
-
         if (index == -1) {
-            feedbackLabel.setText("TIMEOUT! You took damage.");
-            feedbackLabel.setForeground(Color.RED);
-        } else if (result.contains("CORRECT")) {
-            feedbackLabel.setText("CORRECT! Proceeding...");
-            feedbackLabel.setForeground(new Color(0, 150, 0));
+            String result = engine.processAnswer(-1);
+            animationManager.setEnemyState("attack", () -> {
+                animationManager.setPlayerState("hurt", () -> {
+                    terminalLog.append(result);
+                    updateBars();
+                    checkGameState();
+                });
+            });
+            
         } else {
-            feedbackLabel.setText("WRONG! Enemy counter-attacks.");
-            feedbackLabel.setForeground(Color.RED);
+            Hero hero = engine.getHero();
+            Enemy enemy = engine.getCurrentEnemy();
+            int hp = enemy.getHealth();
+            int hpHero = hero.getHealth();
+            
+            String result = engine.processAnswer(index);
+            
+            if (result.contains("CORRECT")) {
+                animationManager.setPlayerState("attack", () -> {
+                    animationManager.setEnemyState("hurt", () -> {
+                        terminalLog.append(result);
+                        updateBars();
+                        checkGameState();
+                    });
+                });
+            } else {
+                animationManager.setEnemyState("attack", () -> {
+                    animationManager.setPlayerState("hurt", () -> {
+                        terminalLog.append(result);
+                        updateBars();
+                        checkGameState();
+                    });
+                });
+            }
         }
+    }
 
-        // Check for special events in logs
-        if (result.contains("LEVEL CLEARED")) {
-            JOptionPane.showMessageDialog(this, "CONGRATULATIONS!\nLevel Cleared! Heading to next level.", "Level Up", JOptionPane.INFORMATION_MESSAGE);
-        } else if (result.contains("Level") && result.contains("Overlord")) {
-             feedbackLabel.setText("BOSS ALERT! BE CAREFUL!");
-             feedbackLabel.setForeground(Color.ORANGE);
+    private void updateBars() {
+        Hero hero = engine.getHero();
+        Enemy enemy = engine.getCurrentEnemy();
+        
+        if (heroHealthBar != null) {
+            heroHealthBar.setValue(hero.getHealth());
+            heroHealthBar.setString(hero.getHealth() + " / " + hero.getMaxHealth());
         }
+        if (enemyHealthBar != null) {
+            enemyHealthBar.setValue(enemy.getHealth());
+            enemyHealthBar.setString(enemy.getHealth() + " / " + enemy.getMaxHealth());
+        }
+    }
 
+    private void checkGameState() {
         if (engine.isGameOver()) {
-            gameOver();
+             animationManager.setPlayerState("die", () -> {
+                 terminalLog.append("You were defeated by " + engine.getCurrentEnemy().getName() + ".\n");
+                 Timer waitTimer = new Timer(2500, e -> gameOver());
+                 waitTimer.setRepeats(false);
+                 waitTimer.start();
+             });
+        } else if (!engine.getCurrentEnemy().isAlive()) {
+             animationManager.setEnemyState("die", () -> {
+                 animationManager.setEnemyState("none", null);
+                 Enemy e = engine.getCurrentEnemy();
+                 int xp = 50; 
+                 if (e instanceof Boss) xp = 500;
+                 else xp = e.getRewardExp();
+                 
+                 // Show floating UI effect on SpritePanel
+                 JLabel defeatBanner = new JLabel("ENEMY DEFEATED!", SwingConstants.CENTER);
+                 defeatBanner.setFont(new Font("SansSerif", Font.BOLD, 36));
+                 defeatBanner.setForeground(new Color(255, 215, 0));
+                 defeatBanner.setBounds(200, 100, 400, 60);
+                 
+                 JLabel xpPopup = new JLabel("+" + xp + " XP", SwingConstants.CENTER);
+                 xpPopup.setFont(new Font("Monospaced", Font.BOLD, 24));
+                 xpPopup.setForeground(new Color(50, 255, 50));
+                 xpPopup.setBounds(500, 70, 200, 40); // Near enemy
+                 
+                 spritePanel.add(defeatBanner);
+                 spritePanel.add(xpPopup);
+                 spritePanel.repaint();
+                 
+                 Timer waitTimer = new Timer(2500, ev -> {
+                     spritePanel.remove(defeatBanner);
+                     spritePanel.remove(xpPopup);
+                     spritePanel.repaint();
+                     engine.spawnNextEnemy();
+                     updateUI(); 
+                 });
+                 waitTimer.setRepeats(false);
+                 waitTimer.start();
+             });
         } else {
-            // Wait 2 seconds before next question to let user read feedback
-            Timer nextTimer = new Timer(2000, e -> updateUI());
-            nextTimer.setRepeats(false);
-            nextTimer.start();
+            Timer waitTimer = new Timer(2000, ev -> loadNextQuestion());
+            waitTimer.setRepeats(false);
+            waitTimer.start();
         }
     }
 
     private void useHealPowerUp() {
         engine.getHero().useHealPowerUp();
-        updateUIWithoutLoading();
-        battleLog.append(">> Hero used HEAL (+40 HP)!\n");
+        updateBars();
+        healBtn.setEnabled(engine.getHero().getPowerUps() > 0);
+        
+        terminalLog.append(">> Hero consumed a HEAL Power-up (+40 HP)!\n");
+        bottomCardLayout.show(bottomActionPanel, "TERMINAL");
+        Timer waitTimer = new Timer(1500, e -> bottomCardLayout.show(bottomActionPanel, "OPTIONS"));
+        waitTimer.setRepeats(false);
+        waitTimer.start();
     }
 
     private void useDoubleDamagePowerUp() {
         engine.getHero().useDoubleDamagePowerUp();
         doubleDamageBtn.setEnabled(false);
-        battleLog.append(">> Hero used DOUBLE DAMAGE (Next attack x2)!\n");
-    }
-
-    private void updateUIWithoutLoading() {
-        Hero hero = engine.getHero();
-        heroHealthBar.setValue(hero.getHealth());
-        heroHealthBar.setString(hero.getHealth() + " / " + hero.getMaxHealth());
-        heroInfoLabel.setText(hero.getName() + " (HP) - Level " + engine.getCurrentLevel());
-        healBtn.setEnabled(hero.getPowerUps() > 0);
+        
+        terminalLog.append(">> Hero activated DOUBLE DAMAGE (Next attack x2)!\n");
+        bottomCardLayout.show(bottomActionPanel, "TERMINAL");
+        Timer waitTimer = new Timer(1500, e -> bottomCardLayout.show(bottomActionPanel, "OPTIONS"));
+        waitTimer.setRepeats(false);
+        waitTimer.start();
     }
 
     private void gameOver() {

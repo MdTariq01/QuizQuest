@@ -11,6 +11,8 @@ public class Hero extends Character {
     private int exp;
     private int powerUps;
     private boolean nextAttackDoubleDamage = false;
+    private boolean lastAttackCritical = false;
+    private boolean lastAttackDouble = false;
     private static final Random random = new Random();
 
     public Hero(String name) {
@@ -22,25 +24,30 @@ public class Hero extends Character {
 
     @Override
     public int attack() {
+        lastAttackCritical = false;
+        lastAttackDouble = false;
         // Base damage increases with level
         int baseDamage = 15 + (level * 5);
         
         // Critical hit chance (15%)
         boolean isCritical = random.nextInt(100) < 15;
         if (isCritical) {
-            System.out.println("Critical Hit!");
+            lastAttackCritical = true;
             baseDamage *= 2;
         }
 
         // Apply double damage power-up
         if (nextAttackDoubleDamage) {
-            System.out.println("Power-up: Double Damage Active!");
+            lastAttackDouble = true;
             baseDamage *= 2;
             nextAttackDoubleDamage = false; // Consume power-up
         }
 
         return baseDamage;
     }
+
+    public boolean isLastAttackCritical() { return lastAttackCritical; }
+    public boolean isLastAttackDouble() { return lastAttackDouble; }
 
     public void addExp(int amount) {
         this.exp += amount;
