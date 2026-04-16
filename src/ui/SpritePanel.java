@@ -15,14 +15,20 @@ public class SpritePanel extends JPanel {
     private Image enemySprite;
 
     private int playerX = 100;
-    private int playerY = 150;
+    private int playerY = 100;
     
     private int enemyX = 450;
-    private int enemyY = 50;
+    private int enemyY = -40;
 
     public SpritePanel() {
         setOpaque(false);
         setPreferredSize(new Dimension(800, 300));
+    }
+
+    public void setEnemyPosition(int x, int y) {
+        this.enemyX = x;
+        this.enemyY = y;
+        repaint();
     }
 
     public void setPlayerSprite(Image img) {
@@ -45,12 +51,21 @@ public class SpritePanel extends JPanel {
 
         // Draw Player Sprite (bottom-left)
         if (playerSprite != null) {
-            g2d.drawImage(playerSprite, playerX, playerY, playerSprite.getWidth(null) * 2, playerSprite.getHeight(null) * 2, null);
+            // Scale up player sprite while keeping the same bottom baseline as previous scale (2x).
+            int oldScale = 2;
+            int newScale = 3; // increase player size
+            int pW = playerSprite.getWidth(null) * newScale;
+            int pH = playerSprite.getHeight(null) * newScale;
+            int oldH = playerSprite.getHeight(null) * oldScale;
+            int drawY = playerY + oldH - pH; // adjust so feet remain anchored
+            g2d.drawImage(playerSprite, playerX, drawY, pW, pH, null);
         }
 
         // Draw Enemy Sprite (top-right)
         if (enemySprite != null) {
-            g2d.drawImage(enemySprite, enemyX, enemyY, enemySprite.getWidth(null) * 2, enemySprite.getHeight(null) * 2, null);
+            int eW = enemySprite.getWidth(null) * 2;
+            int eH = enemySprite.getHeight(null) * 2;
+            g2d.drawImage(enemySprite, enemyX + eW, enemyY, -eW, eH, null);
         }
 
         g2d.dispose();

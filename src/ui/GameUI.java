@@ -43,6 +43,7 @@ public class GameUI extends JFrame {
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        setResizable(false);
         initStartScreen();
     }
 
@@ -131,7 +132,7 @@ public class GameUI extends JFrame {
         enemyCard.setBounds(500, 20, 250, 60);
 
         JPanel playerCard = createEntityCard(false);
-        playerCard.setBounds(20, 150, 250, 60);
+        playerCard.setBounds(70, 100, 250, 60);
         
         spritePanel.add(restartBtn);
         spritePanel.add(exitBtn);
@@ -218,6 +219,106 @@ public class GameUI extends JFrame {
         revalidate();
     }
 
+    // Custom rounded progress bar used for thinner, rounded health bars.
+    private static class RoundedProgressBar extends JProgressBar {
+        private int arc = 12;
+
+        public RoundedProgressBar(int min, int max) {
+            super(min, max);
+            setOpaque(false);
+            setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int w = getWidth();
+            int h = getHeight();
+            int r = Math.max(6, Math.min(arc, h));
+
+            // Background rounded rect
+            g2.setColor(getBackground());
+            g2.fillRoundRect(0, 0, w, h, r, r);
+
+            // Filled portion
+            int range = getMaximum() - getMinimum();
+            double pct = range > 0 ? (double) (getValue() - getMinimum()) / range : 0.0;
+            int fillW = (int) Math.round(pct * w);
+            g2.setColor(getForeground());
+            if (fillW > 0) {
+                g2.fillRoundRect(0, 0, fillW, h, r, r);
+            }
+
+            // Draw the string in the center, with contrast depending on fill
+            if (isStringPainted()) {
+                String s = getString();
+                FontMetrics fm = g2.getFontMetrics();
+                int strW = fm.stringWidth(s);
+                int strH = fm.getAscent();
+                int x = (w - strW) / 2;
+                int y = (h + strH) / 2 - 2;
+
+                // If most of the text sits on filled area, draw it in background color for contrast
+                Color textColor = (fillW > x + strW / 2) ? getBackground() : getForeground();
+                g2.setColor(textColor);
+                g2.drawString(s, x, y);
+            }
+
+            g2.dispose();
+        }
+    }
+
+    // Overlay that paints an elliptic radial gradient background and can host labels on top.
+    private class DefeatOverlay extends JPanel {
+        private final Color base = new Color(0x23, 0x2d, 0x37);
+
+        DefeatOverlay() {
+            setOpaque(false);
+            setLayout(null);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int w = getWidth();
+            int h = getHeight();
+            if (w <= 0 || h <= 0) {
+                g2.dispose();
+                return;
+            }
+
+            // Use a true RadialGradientPaint scaled to an ellipse for a smooth falloff
+            float cx = w / 2f;
+            float cy = h / 2f;
+            float rx = w * 0.9f; // horizontal radius of the ellipse
+            float ry = h * 0.6f; // vertical radius
+
+            // Save transform and create a normalized radial gradient (center 0,0 radius 1),
+            // then scale to ellipse by transforming the graphics context.
+            java.awt.geom.AffineTransform old = g2.getTransform();
+            g2.translate(cx, cy);
+            g2.scale(rx, ry);
+
+            float[] dist = {0f, 0.6f, 1f};
+            Color c0 = new Color(base.getRed(), base.getGreen(), base.getBlue(), 230);
+            Color c1 = new Color(base.getRed(), base.getGreen(), base.getBlue(), 80);
+            Color c2 = new Color(base.getRed(), base.getGreen(), base.getBlue(), 0);
+            java.awt.RadialGradientPaint rgp = new java.awt.RadialGradientPaint(new java.awt.geom.Point2D.Float(0f, 0f), 1f, dist, new Color[]{c0, c1, c2}, java.awt.MultipleGradientPaint.CycleMethod.NO_CYCLE);
+            g2.setPaint(rgp);
+            // Draw unit circle which, after scaling, becomes the desired ellipse
+            g2.fillOval(-1, -1, 2, 2);
+            // restore transform
+            g2.setTransform(old);
+
+            g2.dispose();
+        }
+    }
+
     private JPanel createEntityCard(boolean isEnemy) {
         JPanel card = new JPanel(new BorderLayout());
         card.setOpaque(false);
@@ -225,8 +326,11 @@ public class GameUI extends JFrame {
         JLabel nameLabel = new JLabel(isEnemy ? "Enemy Name" : "Hero Name");
         nameLabel.setForeground(Color.WHITE);
         nameLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+        // Indent the name so it aligns with the health bar which has left padding
+        nameLabel.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 0));
         
-        JProgressBar hpBar = new JProgressBar(0, 100);
+        // Use a custom rounded progress bar and keep a thin visual height.
+        RoundedProgressBar hpBar = new RoundedProgressBar(0, 100);
         hpBar.setStringPainted(true);
         if (isEnemy) {
             enemyInfoLabel = nameLabel;
@@ -238,9 +342,20 @@ public class GameUI extends JFrame {
             hpBar.setForeground(new Color(46, 204, 113));
         }
         hpBar.setBackground(new Color(50, 50, 65));
-        
+
+        // Make the health bar visually thinner while preserving functionality.
+        hpBar.setPreferredSize(new Dimension(200, 12));
+        hpBar.setBorder(BorderFactory.createEmptyBorder(2, 6, 2, 6));
+
+        // Wrap the progress bar so its preferred height is respected inside the card
+        // and add left padding to shift the bar slightly to the right.
+        JPanel hpWrapper = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        hpWrapper.setOpaque(false);
+        hpWrapper.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 0));
+        hpWrapper.add(hpBar);
+
         card.add(nameLabel, BorderLayout.NORTH);
-        card.add(hpBar, BorderLayout.CENTER);
+        card.add(hpWrapper, BorderLayout.CENTER);
         return card;
     }
 
@@ -248,7 +363,7 @@ public class GameUI extends JFrame {
         Hero hero = engine.getHero();
         Enemy enemy = engine.getCurrentEnemy();
         
-        heroInfoLabel.setText(hero.getName() + " - Lv " + engine.getCurrentLevel());
+        heroInfoLabel.setText(hero.getName() + " - Lv " + hero.getLevel());
         heroHealthBar.setMaximum(hero.getMaxHealth());
         heroHealthBar.setValue(hero.getHealth());
         heroHealthBar.setString(hero.getHealth() + " / " + hero.getMaxHealth());
@@ -351,7 +466,11 @@ public class GameUI extends JFrame {
         Hero hero = engine.getHero();
         Enemy enemy = engine.getCurrentEnemy();
         
+        if (heroInfoLabel != null) {
+            heroInfoLabel.setText(hero.getName() + " - Lv " + hero.getLevel());
+        }
         if (heroHealthBar != null) {
+            heroHealthBar.setMaximum(hero.getMaxHealth()); // Max health can increase on level up
             heroHealthBar.setValue(hero.getHealth());
             heroHealthBar.setString(hero.getHealth() + " / " + hero.getMaxHealth());
         }
@@ -364,6 +483,7 @@ public class GameUI extends JFrame {
     private void checkGameState() {
         if (engine.isGameOver()) {
              animationManager.setPlayerState("die", () -> {
+                 animationManager.setPlayerState("none", null);
                  terminalLog.append("You were defeated by " + engine.getCurrentEnemy().getName() + ".\n");
                  Timer waitTimer = new Timer(2500, e -> gameOver());
                  waitTimer.setRepeats(false);
@@ -377,24 +497,31 @@ public class GameUI extends JFrame {
                  if (e instanceof Boss) xp = 500;
                  else xp = e.getRewardExp();
                  
-                 // Show floating UI effect on SpritePanel
+                 // Show a full-panel overlay with an elliptic radial gradient and centered banner
+                 DefeatOverlay overlay = new DefeatOverlay();
+                 // size overlay to spritePanel current size
+                 overlay.setBounds(0, 0, spritePanel.getWidth(), spritePanel.getHeight());
+
                  JLabel defeatBanner = new JLabel("ENEMY DEFEATED!", SwingConstants.CENTER);
                  defeatBanner.setFont(new Font("SansSerif", Font.BOLD, 36));
                  defeatBanner.setForeground(new Color(255, 215, 0));
-                 defeatBanner.setBounds(200, 100, 400, 60);
-                 
+                 defeatBanner.setBounds((overlay.getWidth() - 400) / 2, 100, 400, 60);
+
                  JLabel xpPopup = new JLabel("+" + xp + " XP", SwingConstants.CENTER);
                  xpPopup.setFont(new Font("Monospaced", Font.BOLD, 24));
                  xpPopup.setForeground(new Color(50, 255, 50));
                  xpPopup.setBounds(500, 70, 200, 40); // Near enemy
-                 
-                 spritePanel.add(defeatBanner);
-                 spritePanel.add(xpPopup);
+
+                 overlay.add(defeatBanner);
+                 overlay.add(xpPopup);
+
+                 spritePanel.add(overlay);
+                 // Try to bring overlay to front
+                 try { spritePanel.setComponentZOrder(overlay, 0); } catch (Exception ignored) {}
                  spritePanel.repaint();
-                 
+
                  Timer waitTimer = new Timer(2500, ev -> {
-                     spritePanel.remove(defeatBanner);
-                     spritePanel.remove(xpPopup);
+                     spritePanel.remove(overlay);
                      spritePanel.repaint();
                      engine.spawnNextEnemy();
                      updateUI(); 
